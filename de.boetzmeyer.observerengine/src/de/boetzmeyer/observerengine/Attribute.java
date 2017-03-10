@@ -8,6 +8,12 @@ import java.util.Date;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+/**
+ * @author timbotzmeyer
+ * 
+ * The attributes that build the model
+ *
+ */
 final class Attribute implements Serializable {
 
 	private static final long serialVersionUID = "ATTRIBUTE".hashCode();
