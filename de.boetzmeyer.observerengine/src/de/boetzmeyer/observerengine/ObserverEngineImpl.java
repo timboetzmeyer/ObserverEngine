@@ -1,7 +1,6 @@
 package de.boetzmeyer.observerengine;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,6 +22,7 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 	private final AtomicBoolean running = new AtomicBoolean(false);
 	private final AtomicInteger updateCounter = new AtomicInteger(0);
 	private final Map<State, Set<IStateObserver>> stateObservers = new HashMap<State, Set<IStateObserver>>();
+	private final Map<String, State> stateCache = new HashMap<String, State>();
 	private Date lastQueryTime;
 
 	public ObserverEngineImpl(final String observerModelDir, final int inMaxHistoryEntries, final int inUpdateIntervalInMillis,
@@ -34,17 +34,21 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 		cleanupCounter = inCleanupCounter;
 		executorService = Executors.newSingleThreadExecutor();
 		lastQueryTime = new Date();
+		final List<State> modelStates = server.listState();
+		for (State state : modelStates) {
+			stateCache.put(state.getStateName(), state);
+		}
 	}
 
 	/* (non-Javadoc)
 	 * @see de.boetzmeyer.observerengine.IObserverEngine#addStateChangeListener(de.boetzmeyer.observerengine.State, de.boetzmeyer.observerengine.IStateObserver)
 	 */
 	@Override
-	public boolean addStateChangeListener(final IState inState, final IStateObserver inStateObserver) {
+	public boolean addStateChangeListener(final String inState, final IStateObserver inStateObserver) {
 		if ((inState == null) || (inStateObserver != null)) {
 			return false;
 		}
-		final State registeredState = server.findByIDState(inState.getPrimaryKey());
+		final State registeredState = this.stateCache.get(inState);
 		if (registeredState == null) {
 			return false;
 		}
@@ -60,11 +64,11 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 	 * @see de.boetzmeyer.observerengine.IObserverEngine#removeStateChangeListener(de.boetzmeyer.observerengine.State, de.boetzmeyer.observerengine.IStateObserver)
 	 */
 	@Override
-	public boolean removeStateChangeListener(final IState inState, final IStateObserver inStateObserver) {
+	public boolean removeStateChangeListener(final String inState, final IStateObserver inStateObserver) {
 		if ((inState == null) || (inStateObserver != null)) {
 			return false;
 		}
-		final State registeredState = server.findByIDState(inState.getPrimaryKey());
+		final State registeredState = this.stateCache.get(inState);
 		if (registeredState == null) {
 			return false;
 		}

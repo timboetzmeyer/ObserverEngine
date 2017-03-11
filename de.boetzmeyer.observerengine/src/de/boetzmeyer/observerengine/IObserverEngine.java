@@ -12,7 +12,7 @@ interface IObserverEngine {
 	/**
 	 * Method for adding an observer of a state that is known in the engine.
 	 * 
-	 * @param inState
+	 * @param inStateID
 	 *            the state the observer is interested in
 	 * @param inStateObserver
 	 *            the implementation of the {@link IStateObserver} interface
@@ -20,12 +20,12 @@ interface IObserverEngine {
 	 *            state
 	 * @return true, if the observer could be added to the engine
 	 */
-	boolean addStateChangeListener(final IState inState, final IStateObserver inStateObserver);
+	boolean addStateChangeListener(final String inStateID, final IStateObserver inStateObserver);
 
 	/**
 	 * Method for removing an observer of a state that is known in the engine.
 	 * 
-	 * @param inState
+	 * @param inStateID
 	 *            the state the observer is interested in
 	 * @param inStateObserver
 	 *            the implementation of the {@link IStateObserver} interface
@@ -33,7 +33,7 @@ interface IObserverEngine {
 	 *            state
 	 * @return true, if the observer could be removed from the engine
 	 */
-	boolean removeStateChangeListener(final IState inState, final IStateObserver inStateObserver);
+	boolean removeStateChangeListener(final String inStateID, final IStateObserver inStateObserver);
 
 	/**
 	 * Method to update a state in the engine.
