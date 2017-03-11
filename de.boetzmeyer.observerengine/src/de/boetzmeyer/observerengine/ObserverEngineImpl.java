@@ -25,8 +25,9 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 	private final Map<State, Set<IStateObserver>> stateObservers = new HashMap<State, Set<IStateObserver>>();
 	private Date lastQueryTime;
 
-	public ObserverEngineImpl(final int inMaxHistoryEntries, final int inUpdateIntervalInMillis,
+	public ObserverEngineImpl(final String observerModelDir, final int inMaxHistoryEntries, final int inUpdateIntervalInMillis,
 			final int inCleanupCounter) {
+		Settings.setLocaleDatabaseDir(observerModelDir);
 		server = ServerFactory.create();
 		maxHistoryEntries = inMaxHistoryEntries;
 		updateIntervalInMillis = inUpdateIntervalInMillis;
