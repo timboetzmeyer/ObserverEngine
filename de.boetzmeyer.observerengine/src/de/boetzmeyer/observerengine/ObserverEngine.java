@@ -12,13 +12,13 @@ package de.boetzmeyer.observerengine;
  *
  */
 public final class ObserverEngine {
-	
+
 	private static final int DEFAULT_HISTORY_CLEANUP_AFTER_X_OBSERVATION_CYCLES = 60;
 
 	private static final int DEFAULT_SLEEP_TIME_BETWEEN_TWO_OBSERVATION_CYCLES_IN_MILLISECONDS = 1000;
 
 	private static final int DEFAULT_MAX_HISTORY_ENTRIES = 5;
-	
+
 	private static IObserverEngineAdmin observerEngine;
 
 	private ObserverEngine() {
@@ -29,8 +29,8 @@ public final class ObserverEngine {
 	 * application.
 	 * 
 	 * @param observerModelDir
-	 *            the local directory where the observer model is stored on
-	 *            hard disk
+	 *            the local directory where the observer model is stored on hard
+	 *            disk
 	 * @return a reference to the initialize observer engine
 	 */
 	public synchronized static IObserverEngineAdmin init(final String observerModelDir) {
@@ -39,16 +39,22 @@ public final class ObserverEngine {
 			final IObserverEngineAdmin newEngine = new ObserverEngineImpl(observerModelDir, DEFAULT_MAX_HISTORY_ENTRIES,
 					DEFAULT_SLEEP_TIME_BETWEEN_TWO_OBSERVATION_CYCLES_IN_MILLISECONDS,
 					DEFAULT_HISTORY_CLEANUP_AFTER_X_OBSERVATION_CYCLES);
-			
-			if (newEngine.getStates().size() == 0) {
-				throw new IllegalArgumentException(String.format("No states for observation in model in directory '%s'", observerModelDir));
-			}
-			if (newEngine.getObservers().size() == 0) {
-				throw new IllegalArgumentException(String.format("No observers in model in directory '%s'", observerModelDir));
-			}
+
+			checkModelContent(observerModelDir, newEngine);
 			observerEngine = newEngine;
 		}
 		return observerEngine;
+	}
+
+	private static void checkModelContent(final String observerModelDir, final IObserverEngineAdmin newEngine) {
+		if (newEngine.getStates().size() == 0) {
+			throw new IllegalArgumentException(
+					String.format("No states for observation in model in directory '%s'", observerModelDir));
+		}
+		if (newEngine.getObservers().size() == 0) {
+			throw new IllegalArgumentException(
+					String.format("No observers in model in directory '%s'", observerModelDir));
+		}
 	}
 
 	private static void checkModelDir(final String observerModelDir) {
@@ -57,6 +63,12 @@ public final class ObserverEngine {
 		}
 	}
 
+	/**
+	 * Get a reference to the observer engine, if it is already initialized.
+	 * Otherwise an IllegalStateException is thrown
+	 * 
+	 * @return a reference to the observer engine, if it is already initialized
+	 */
 	public synchronized static IObserverEngine get() {
 		if (observerEngine == null) {
 			throw new IllegalStateException(

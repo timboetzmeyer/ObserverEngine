@@ -14,30 +14,31 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
-	private final ISource server;
+	private final ISource model;
 	private final int maxHistoryEntries;
 	private final int updateIntervalInMillis;
 	private final int cleanupCounter;
 	private final ExecutorService executorService;
 	private final AtomicBoolean running = new AtomicBoolean(false);
 	private final AtomicInteger updateCounter = new AtomicInteger(0);
-	private final Map<State, Set<IStateObserver>> stateObservers = new HashMap<State, Set<IStateObserver>>();
 	private final Map<String, State> stateCache = new HashMap<String, State>();
+	private final ObserverNotifier observerNotifier;
 	private Date lastQueryTime;
 
 	public ObserverEngineImpl(final String observerModelDir, final int inMaxHistoryEntries, final int inUpdateIntervalInMillis,
 			final int inCleanupCounter) {
 		Settings.setLocaleDatabaseDir(observerModelDir);
-		server = ServerFactory.create();
+		model = ServerFactory.create();
 		maxHistoryEntries = inMaxHistoryEntries;
 		updateIntervalInMillis = inUpdateIntervalInMillis;
 		cleanupCounter = inCleanupCounter;
 		executorService = Executors.newSingleThreadExecutor();
 		lastQueryTime = new Date();
-		final List<State> modelStates = server.listState();
+		final List<State> modelStates = model.listState();
 		for (State state : modelStates) {
 			stateCache.put(state.getStateName(), state);
 		}
+		observerNotifier = new ObserverNotifier(model);
 	}
 
 	/* (non-Javadoc)
@@ -52,12 +53,7 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 		if (registeredState == null) {
 			return false;
 		}
-		Set<IStateObserver> observers = stateObservers.get(registeredState);
-		if (observers == null) {
-			observers = new HashSet<IStateObserver>();
-			stateObservers.put(registeredState, observers);
-		}
-		return observers.add(inStateObserver);
+		return observerNotifier.addStateChangeListener(inStateObserver, registeredState);
 	}
 
 	/* (non-Javadoc)
@@ -72,12 +68,7 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 		if (registeredState == null) {
 			return false;
 		}
-		Set<IStateObserver> observers = stateObservers.get(registeredState);
-		if (observers == null) {
-			observers = new HashSet<IStateObserver>();
-			stateObservers.put(registeredState, observers);
-		}
-		return observers.remove(inStateObserver);
+		return observerNotifier.removeStateChangeListener(inStateObserver, registeredState);
 	}
 
 	/* (non-Javadoc)
@@ -143,61 +134,11 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 	private void notifyChange(final StateChange inStateChange, final AtomicLong inObserverCalls,
 			final Set<String> inAlreadyCalled) {
 		if (inStateChange != null) {
-			final List<Observer> stateObservers = server.referencesObserverByState(inStateChange.getPrimaryKey());
+			final List<Observer> stateObservers = model.referencesObserverByState(inStateChange.getPrimaryKey());
 			for (Observer observer : stateObservers) {
-				notifyObserver(observer, inStateChange, inObserverCalls, inAlreadyCalled);
+				observerNotifier.notifyObserver(observer, inStateChange, inObserverCalls, inAlreadyCalled);
 			}
 		}
-	}
-
-	private void notifyObserver(final Observer observer, final StateChange inStateChange,
-			final AtomicLong inObserverCalls, final Set<String> inAlreadyCalled) {
-		if (observer != null) {
-			try {
-				final String observerClassName = observer.getActionClass();
-				invokeObserver(observerClassName, inStateChange, inAlreadyCalled);
-				final List<ObserverLink> dependentObserverLinks = server
-						.referencesObserverLinkByDestination(observer.getPrimaryKey());
-				for (ObserverLink observerLink : dependentObserverLinks) {
-					final Observer dependentObserver = observerLink.getDestinationRef();
-					notifyObserver(dependentObserver, inStateChange, inObserverCalls, inAlreadyCalled);
-				}
-			} catch (final Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
-
-	private void invokeObserver(final String inObserverClassName, final StateChange inStateChange,
-			final Set<String> inAlreadyCalled) {
-		if (inObserverClassName.trim().isEmpty() == false) {
-			if (inAlreadyCalled.contains(inObserverClassName.trim())) {
-				System.err.println(inObserverClassName.trim() + " was already called.");
-			} else {
-				inAlreadyCalled.add(inObserverClassName.trim());
-			}
-			final State state = inStateChange.getStateRef();
-			final IStateObserver stateObserver = getStateObserver(state, inObserverClassName.trim());
-			if (stateObserver != null) {
-				try {
-					stateObserver.stateChanged(inStateChange);
-				} catch (final Exception e) {
-					System.err.println(e.getMessage());
-				}
-			}
-		}
-	}
-
-	private IStateObserver getStateObserver(final IState inState, final String inObserverClass) {
-		final Set<IStateObserver> observers = this.stateObservers.get(inState);
-		if (observers != null) {
-			for (IStateObserver stateObserver : observers) {
-				if (inObserverClass.equals(stateObserver.getClass().getName())) {
-					return stateObserver;
-				}
-			}
-		}
-		return null;
 	}
 
 	/* (non-Javadoc)
@@ -209,7 +150,7 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 		if (state == null) {
 			throw new IllegalArgumentException("Input state must not be null");
 		}
-		final List<StateChange> changes = server.referencesStateChangeByState(state.getPrimaryKey());
+		final List<StateChange> changes = model.referencesStateChangeByState(state.getPrimaryKey());
 		if (changes.size() > 0) {
 			StateChange.sortByChangeTime(changes, false);
 			final StateChange lastChange = changes.get(0);
@@ -220,15 +161,15 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 	}
 
 	private void cleanupHistory() {
-		final List<State> allStates = server.listState();
+		final List<State> allStates = model.listState();
 		for (State state : allStates) {
-			final List<StateChange> changes = server.referencesStateChangeByState(state.getPrimaryKey());
+			final List<StateChange> changes = model.referencesStateChangeByState(state.getPrimaryKey());
 			if (changes.size() > maxHistoryEntries) {
 				StateChange.sortByChangeTime(changes, false);
 				for (int i = maxHistoryEntries; i < changes.size(); i++) {
 					final StateChange oldStateChange = changes.get(i);
 					if (oldStateChange != null) {
-						server.deleteStateChange(oldStateChange.getPrimaryKey());
+						model.deleteStateChange(oldStateChange.getPrimaryKey());
 					}
 				}
 			}
@@ -237,9 +178,9 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 
 	private List<StateChange> getChangesSince(final Date inLastQuery) {
 		final List<StateChange> modifiedStates = new ArrayList<StateChange>();
-		final List<State> allStates = server.listState();
+		final List<State> allStates = model.listState();
 		for (State state : allStates) {
-			final List<StateChange> changes = server.referencesStateChangeByState(state.getPrimaryKey());
+			final List<StateChange> changes = model.referencesStateChangeByState(state.getPrimaryKey());
 			if (changes.size() > 0) {
 				StateChange.sortByChangeTime(changes, false);
 				final StateChange stateChange = changes.get(0);
@@ -273,7 +214,7 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 	@Override
 	public List<IObserver> getModuleObservers(final IModule inModule) {
 		final Set<IObserver> observers = new HashSet<IObserver>();
-		final List<NotificationScope> scopes = server.referencesNotificationScopeByModule(inModule.getPrimaryKey());
+		final List<NotificationScope> scopes = model.referencesNotificationScopeByModule(inModule.getPrimaryKey());
 		for (NotificationScope notificationScope : scopes) {
 			final Observer o = notificationScope.getObserverRef();
 			if (o != null) {
@@ -286,7 +227,7 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 	@Override
 	public List<IState> getStates() {
 		final List<IState> states = new ArrayList<IState>();
-		for (State state : server.listState()) {
+		for (State state : model.listState()) {
 			states.add(state);
 		}
 		return states;
@@ -295,7 +236,7 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 	@Override
 	public List<IModule> getModules() {
 		final List<IModule> modules = new ArrayList<IModule>();
-		for (Module module : server.listModule()) {
+		for (Module module : model.listModule()) {
 			modules.add(module);
 		}
 		return modules;
@@ -305,7 +246,7 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 	public List<IObserver> getStateObservers(final IState inState) {
 		final List<IObserver> observers = new ArrayList<IObserver>();
 		if (inState != null) {
-			for (Observer observer : server.referencesObserverByState(inState.getPrimaryKey())) {
+			for (Observer observer : model.referencesObserverByState(inState.getPrimaryKey())) {
 				observers.add(observer);
 			}
 		}
@@ -316,9 +257,9 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 	public List<IObserver> getStateObservers(final IState inState, final IModule inModule) {
 		final List<IObserver> observers = new ArrayList<IObserver>();
 		if (inState != null) {
-			for (Observer observer : server.referencesObserverByState(inState.getPrimaryKey())) {
+			for (Observer observer : model.referencesObserverByState(inState.getPrimaryKey())) {
 				if (inModule != null) {
-					final List<NotificationScope> scopes = server.referencesNotificationScopeByModule(inModule.getPrimaryKey());
+					final List<NotificationScope> scopes = model.referencesNotificationScopeByModule(inModule.getPrimaryKey());
 					for (NotificationScope notificationScope : scopes) {
 						final Module module = notificationScope.getModuleRef();
 						if (inModule.equals(module)) {
@@ -336,8 +277,8 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 	@Override
 	public List<IObserver> getObservers() {
 		final List<IObserver> observers = new ArrayList<IObserver>();
-		for (IObserver module : server.listObserver()) {
-			observers.add(module);
+		for (IObserver observer : model.listObserver()) {
+			observers.add(observer);
 		}
 		return observers;
 	}
