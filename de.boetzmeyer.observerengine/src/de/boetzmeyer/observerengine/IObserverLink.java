@@ -1,6 +1,6 @@
 package de.boetzmeyer.observerengine;
 
-public interface IObserverLink extends IRecordable {
+interface IObserverLink extends IRecordable {
 	long getSource();
 
 	long getDestination();

@@ -12,6 +12,7 @@ public class Example {
 	private static final String SPEED_CAR_4 = "car4.speed";
 	
 	public static void main(String[] args) {
+		
 		// defines the directory for the observer model file 'CommunicationModel.zip', that has to be located in this directory
 		final String userDir = System.getProperty("user.home");
 		final String modelDir = String.format("%s%s%s", userDir, Character.toString(File.separatorChar), "exampleObserverEngine");
