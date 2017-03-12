@@ -45,7 +45,7 @@ interface IObserverEngine {
 	 *            the engine
 	 * @return the number of direct observer calls for this state
 	 */
-	long update(final IState inState, final String inValue);
+	long update(final String inState, final String inValue);
 
 	/**
 	 * Get the current value of the state.
@@ -55,6 +55,6 @@ interface IObserverEngine {
 	 * @return the current value of the state or 'null' if the state does not
 	 *         exist in the engine
 	 */
-	String getValue(final IState inState);
+	String getValue(final String inState);
 
 }

@@ -122,13 +122,13 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 	 * @see de.boetzmeyer.observerengine.IObserverEngine#update(de.boetzmeyer.observerengine.IState, java.lang.String)
 	 */
 	@Override
-	public long update(final IState inState, final String inValue) {
+	public long update(final String inState, final String inValue) {
 		final AtomicLong observerCalls = new AtomicLong(0);
 		final Set<String> alreadyCalled = new HashSet<String>();
 		if (inState == null) {
 			throw new IllegalArgumentException("Input state must not be null");
 		}
-		final State state = server.findByIDState(inState.getPrimaryKey());
+		final State state = stateCache.get(inState);
 		if (state != null) {
 			final StateChange stateChange = StateChange.generate();
 			stateChange.setChangeTime(new Date());
@@ -204,17 +204,18 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 	 * @see de.boetzmeyer.observerengine.IObserverEngine#getValue(de.boetzmeyer.observerengine.IState)
 	 */
 	@Override
-	public String getValue(final IState inState) {
-		if (inState == null) {
+	public String getValue(final String inStateName) {
+		final State state = stateCache.get(inStateName);
+		if (state == null) {
 			throw new IllegalArgumentException("Input state must not be null");
 		}
-		final List<StateChange> changes = server.referencesStateChangeByState(inState.getPrimaryKey());
+		final List<StateChange> changes = server.referencesStateChangeByState(state.getPrimaryKey());
 		if (changes.size() > 0) {
 			StateChange.sortByChangeTime(changes, false);
 			final StateChange lastChange = changes.get(0);
 			return lastChange.getStateValue();
 		} else {
-			return inState.getDefaultValue();
+			return state.getDefaultValue();
 		}
 	}
 
