@@ -12,6 +12,13 @@ package de.boetzmeyer.observerengine;
  *
  */
 public final class ObserverEngine {
+	
+	private static final int DEFAULT_HISTORY_CLEANUP_AFTER_X_OBSERVATION_CYCLES = 60;
+
+	private static final int DEFAULT_SLEEP_TIME_BETWEEN_TWO_OBSERVATION_CYCLES_IN_MILLISECONDS = 1000;
+
+	private static final int DEFAULT_MAX_HISTORY_ENTRIES = 5;
+	
 	private static IObserverEngineAdmin observerEngine;
 
 	private ObserverEngine() {
@@ -29,7 +36,17 @@ public final class ObserverEngine {
 	public synchronized static IObserverEngineAdmin init(final String observerModelDir) {
 		checkModelDir(observerModelDir);
 		if (observerEngine == null) {
-			observerEngine = new ObserverEngineImpl(observerModelDir, 5, 1000, 60);
+			final IObserverEngineAdmin newEngine = new ObserverEngineImpl(observerModelDir, DEFAULT_MAX_HISTORY_ENTRIES,
+					DEFAULT_SLEEP_TIME_BETWEEN_TWO_OBSERVATION_CYCLES_IN_MILLISECONDS,
+					DEFAULT_HISTORY_CLEANUP_AFTER_X_OBSERVATION_CYCLES);
+			
+			if (newEngine.getStates().size() == 0) {
+				throw new IllegalArgumentException(String.format("No states for observation in model in directory '%s'", observerModelDir));
+			}
+			if (newEngine.getObservers().size() == 0) {
+				throw new IllegalArgumentException(String.format("No observers in model in directory '%s'", observerModelDir));
+			}
+			observerEngine = newEngine;
 		}
 		return observerEngine;
 	}

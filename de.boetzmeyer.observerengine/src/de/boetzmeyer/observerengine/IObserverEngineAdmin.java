@@ -66,5 +66,12 @@ public interface IObserverEngineAdmin extends IObserverEngine {
 	 * @return all observers of a module that are known to the engine
 	 */
 	List<IObserver> getModuleObservers(final IModule inModule);
+	
+	/**
+	 * Get all observers that are known to the engine.
+	 * 
+	 * @return all observers that are known to the engine
+	 */
+	List<IObserver> getObservers();
 
 }

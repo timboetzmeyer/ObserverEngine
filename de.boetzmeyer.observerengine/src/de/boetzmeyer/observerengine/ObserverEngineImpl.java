@@ -332,4 +332,13 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 		}
 		return observers;
 	}
+
+	@Override
+	public List<IObserver> getObservers() {
+		final List<IObserver> observers = new ArrayList<IObserver>();
+		for (IObserver module : server.listObserver()) {
+			observers.add(module);
+		}
+		return observers;
+	}
 }
