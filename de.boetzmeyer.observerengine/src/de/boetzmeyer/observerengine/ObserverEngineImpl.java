@@ -7,38 +7,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
+final class ObserverEngineImpl implements IObserverEngineAdmin {
 	private final ISource model;
-	private final int maxHistoryEntries;
-	private final int updateIntervalInMillis;
-	private final int cleanupCounter;
-	private final ExecutorService executorService;
-	private final AtomicBoolean running = new AtomicBoolean(false);
-	private final AtomicInteger updateCounter = new AtomicInteger(0);
 	private final Map<String, State> stateCache = new HashMap<String, State>();
 	private final ObserverNotifier observerNotifier;
-	private Date lastQueryTime;
 
 	public ObserverEngineImpl(final String observerModelDir, final int inMaxHistoryEntries, final int inUpdateIntervalInMillis,
 			final int inCleanupCounter) {
 		Settings.setLocaleDatabaseDir(observerModelDir);
 		model = ServerFactory.create();
-		maxHistoryEntries = inMaxHistoryEntries;
-		updateIntervalInMillis = inUpdateIntervalInMillis;
-		cleanupCounter = inCleanupCounter;
-		executorService = Executors.newSingleThreadExecutor();
-		lastQueryTime = new Date();
-		final List<State> modelStates = model.listState();
-		for (State state : modelStates) {
+		for (State state : model.listState()) {
 			stateCache.put(state.getStateName(), state);
 		}
-		observerNotifier = new ObserverNotifier(model);
+		observerNotifier = new ObserverNotifier(model, inMaxHistoryEntries, inUpdateIntervalInMillis, inCleanupCounter);
 	}
 
 	/* (non-Javadoc)
@@ -76,8 +59,7 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 	 */
 	@Override
 	public void start() {
-		running.set(true);
-		executorService.execute(this);
+		observerNotifier.start();
 	}
 
 	/* (non-Javadoc)
@@ -85,28 +67,7 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 	 */
 	@Override
 	public void stop() {
-		running.set(false);
-		executorService.shutdown();
-	}
-
-	@Override
-	public void run() {
-		while (running.get()) {
-			final List<StateChange> stateChanges = this.getChangesSince(lastQueryTime);
-			lastQueryTime = new Date();
-			for (StateChange stateChange : stateChanges) {
-				notifyChange(stateChange, new AtomicLong(0), new HashSet<String>());
-			}
-			try {
-				Thread.sleep(updateIntervalInMillis);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			final boolean cleanup = (updateCounter.incrementAndGet() % cleanupCounter) == 0;
-			if (cleanup) {
-				cleanupHistory();
-			}
-		}
+		observerNotifier.stop();
 	}
 
 	/* (non-Javadoc)
@@ -126,19 +87,9 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 			stateChange.setState(state.getPrimaryKey());
 			stateChange.setStateValue(inValue);
 			stateChange.save();
-			notifyChange(stateChange, observerCalls, alreadyCalled);
+			observerNotifier.notifyChange(stateChange, observerCalls, alreadyCalled);
 		}
 		return observerCalls.get();
-	}
-
-	private void notifyChange(final StateChange inStateChange, final AtomicLong inObserverCalls,
-			final Set<String> inAlreadyCalled) {
-		if (inStateChange != null) {
-			final List<Observer> stateObservers = model.referencesObserverByState(inStateChange.getPrimaryKey());
-			for (Observer observer : stateObservers) {
-				observerNotifier.notifyObserver(observer, inStateChange, inObserverCalls, inAlreadyCalled);
-			}
-		}
 	}
 
 	/* (non-Javadoc)
@@ -160,45 +111,13 @@ final class ObserverEngineImpl implements Runnable, IObserverEngineAdmin {
 		}
 	}
 
-	private void cleanupHistory() {
-		final List<State> allStates = model.listState();
-		for (State state : allStates) {
-			final List<StateChange> changes = model.referencesStateChangeByState(state.getPrimaryKey());
-			if (changes.size() > maxHistoryEntries) {
-				StateChange.sortByChangeTime(changes, false);
-				for (int i = maxHistoryEntries; i < changes.size(); i++) {
-					final StateChange oldStateChange = changes.get(i);
-					if (oldStateChange != null) {
-						model.deleteStateChange(oldStateChange.getPrimaryKey());
-					}
-				}
-			}
-		}
-	}
-
-	private List<StateChange> getChangesSince(final Date inLastQuery) {
-		final List<StateChange> modifiedStates = new ArrayList<StateChange>();
-		final List<State> allStates = model.listState();
-		for (State state : allStates) {
-			final List<StateChange> changes = model.referencesStateChangeByState(state.getPrimaryKey());
-			if (changes.size() > 0) {
-				StateChange.sortByChangeTime(changes, false);
-				final StateChange stateChange = changes.get(0);
-				if (stateChange.getChangeTime().after(inLastQuery)) {
-					modifiedStates.add(stateChange);
-				}
-			}
-		}
-		return modifiedStates;
-	}
-
 	/* (non-Javadoc)
 	 * @see de.boetzmeyer.observerengine.IObserverEngine#getModifiedStates(java.util.Date)
 	 */
 	@Override
 	public List<IState> getModifiedStates(final Date inLastQuery) {
 		final List<IState> modifiedStates = new ArrayList<IState>();
-		final List<StateChange> changesSince = getChangesSince(inLastQuery);
+		final List<StateChange> changesSince = observerNotifier.getChangesSince(inLastQuery);
 		for (StateChange stateChange : changesSince) {
 			final IState state = stateChange.getStateRef();
 			if (state != null) {
