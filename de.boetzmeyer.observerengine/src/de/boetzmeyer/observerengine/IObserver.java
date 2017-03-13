@@ -2,6 +2,7 @@ package de.boetzmeyer.observerengine;
 
 /**
  * @author timbotzmeyer <br>
+ * 		<br>
  *         An observer is going to be invoked by the observer engine, if the
  *         state, which life-cycle is tracked, changes. If the engine detects a
  *         modification of that state, it searches, if an object of a class with

@@ -43,7 +43,7 @@ package de.boetzmeyer.observerengine;
  *         in-sync with the current application state.
  *
  */
-interface IObserverEngine {
+public interface IObserverEngine {
 
 	/**
 	 * Method for adding an observer of a state that is known in the engine.
@@ -93,4 +93,21 @@ interface IObserverEngine {
 	 */
 	String getValue(final String inState);
 
+	/**
+	 * Get the state with the given name.
+	 * 
+	 * @param inStateName
+	 *            the name of the state
+	 * @return the state with the given name
+	 */
+	IState getState(final String inStateName);
+
+	/**
+	 * Get the state with the given internal ID.
+	 * 
+	 * @param inStateID
+	 *            the internalID of the state
+	 * @return the state with the given internal ID
+	 */
+	IState getState(final long inStateID);
 }

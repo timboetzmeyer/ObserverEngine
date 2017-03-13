@@ -1,6 +1,7 @@
 package de.boetzmeyer.observerengine;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,47 +15,68 @@ final class ObserverEngineImpl implements IObserverEngineAdmin {
 	private final Map<String, State> stateCache = new HashMap<String, State>();
 	private final ObserverNotifier observerNotifier;
 
-	public ObserverEngineImpl(final String observerModelDir, final int inMaxHistoryEntries, final int inUpdateIntervalInMillis,
-			final int inCleanupCounter) {
+	public ObserverEngineImpl(final String observerModelDir, final int inMaxHistoryEntries,
+			final int inUpdateIntervalInMillis, final int inCleanupCounter) {
 		Settings.setLocaleDatabaseDir(observerModelDir);
 		model = ServerFactory.create();
-		for (State state : model.listState()) {
-			stateCache.put(state.getStateName(), state);
+		final List<State> states = model.listState();
+		synchronized (stateCache) {
+			for (State state : states) {
+				stateCache.put(state.getStateName(), state);
+			}
 		}
 		observerNotifier = new ObserverNotifier(model, inMaxHistoryEntries, inUpdateIntervalInMillis, inCleanupCounter);
 	}
 
-	/* (non-Javadoc)
-	 * @see de.boetzmeyer.observerengine.IObserverEngine#addStateChangeListener(de.boetzmeyer.observerengine.State, de.boetzmeyer.observerengine.IStateObserver)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.boetzmeyer.observerengine.IObserverEngine#addStateChangeListener(de.
+	 * boetzmeyer.observerengine.State,
+	 * de.boetzmeyer.observerengine.IStateObserver)
 	 */
 	@Override
 	public boolean addStateChangeListener(final String inState, final IStateObserver inStateObserver) {
 		if ((inState == null) || (inStateObserver != null)) {
 			return false;
 		}
-		final State registeredState = this.stateCache.get(inState);
-		if (registeredState == null) {
-			return false;
+		final State registeredState;
+		synchronized (stateCache) {
+			registeredState = this.stateCache.get(inState);
+			if (registeredState == null) {
+				return false;
+			}
 		}
 		return observerNotifier.addStateChangeListener(inStateObserver, registeredState);
 	}
 
-	/* (non-Javadoc)
-	 * @see de.boetzmeyer.observerengine.IObserverEngine#removeStateChangeListener(de.boetzmeyer.observerengine.State, de.boetzmeyer.observerengine.IStateObserver)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.boetzmeyer.observerengine.IObserverEngine#removeStateChangeListener(de
+	 * .boetzmeyer.observerengine.State,
+	 * de.boetzmeyer.observerengine.IStateObserver)
 	 */
 	@Override
 	public boolean removeStateChangeListener(final String inState, final IStateObserver inStateObserver) {
 		if ((inState == null) || (inStateObserver != null)) {
 			return false;
 		}
-		final State registeredState = this.stateCache.get(inState);
-		if (registeredState == null) {
-			return false;
+		final State registeredState;
+		synchronized (stateCache) {
+			registeredState = this.stateCache.get(inState);
+			if (registeredState == null) {
+				return false;
+			}
 		}
 		return observerNotifier.removeStateChangeListener(inStateObserver, registeredState);
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see de.boetzmeyer.observerengine.IObserverEngine#start()
 	 */
 	@Override
@@ -62,7 +84,9 @@ final class ObserverEngineImpl implements IObserverEngineAdmin {
 		observerNotifier.start();
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see de.boetzmeyer.observerengine.IObserverEngine#stop()
 	 */
 	@Override
@@ -70,8 +94,11 @@ final class ObserverEngineImpl implements IObserverEngineAdmin {
 		observerNotifier.stop();
 	}
 
-	/* (non-Javadoc)
-	 * @see de.boetzmeyer.observerengine.IObserverEngine#update(de.boetzmeyer.observerengine.IState, java.lang.String)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see de.boetzmeyer.observerengine.IObserverEngine#update(de.boetzmeyer.
+	 * observerengine.IState, java.lang.String)
 	 */
 	@Override
 	public long update(final String inState, final String inValue) {
@@ -80,7 +107,10 @@ final class ObserverEngineImpl implements IObserverEngineAdmin {
 		if (inState == null) {
 			throw new IllegalArgumentException("Input state must not be null");
 		}
-		final State state = stateCache.get(inState);
+		final State state;
+		synchronized (stateCache) {
+			state = stateCache.get(inState);
+		}
 		if (state != null) {
 			final StateChange stateChange = StateChange.generate();
 			stateChange.setChangeTime(new Date());
@@ -92,14 +122,20 @@ final class ObserverEngineImpl implements IObserverEngineAdmin {
 		return observerCalls.get();
 	}
 
-	/* (non-Javadoc)
-	 * @see de.boetzmeyer.observerengine.IObserverEngine#getValue(de.boetzmeyer.observerengine.IState)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see de.boetzmeyer.observerengine.IObserverEngine#getValue(de.boetzmeyer.
+	 * observerengine.IState)
 	 */
 	@Override
 	public String getValue(final String inStateName) {
-		final State state = stateCache.get(inStateName);
-		if (state == null) {
-			throw new IllegalArgumentException("Input state must not be null");
+		final State state;
+		synchronized (stateCache) {
+			state = stateCache.get(inStateName);
+			if (state == null) {
+				throw new IllegalArgumentException("Input state must not be null");
+			}
 		}
 		final List<StateChange> changes = model.referencesStateChangeByState(state.getPrimaryKey());
 		if (changes.size() > 0) {
@@ -111,8 +147,12 @@ final class ObserverEngineImpl implements IObserverEngineAdmin {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see de.boetzmeyer.observerengine.IObserverEngine#getModifiedStates(java.util.Date)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * de.boetzmeyer.observerengine.IObserverEngine#getModifiedStates(java.util.
+	 * Date)
 	 */
 	@Override
 	public List<IState> getModifiedStates(final Date inLastQuery) {
@@ -126,9 +166,12 @@ final class ObserverEngineImpl implements IObserverEngineAdmin {
 		}
 		return modifiedStates;
 	}
-	
-	/* (non-Javadoc)
-	 * @see de.boetzmeyer.observerengine.IObserverEngine#getModuleObservers(de.boetzmeyer.observerengine.IModule)
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see de.boetzmeyer.observerengine.IObserverEngine#getModuleObservers(de.
+	 * boetzmeyer.observerengine.IModule)
 	 */
 	@Override
 	public List<IObserver> getModuleObservers(final IModule inModule) {
@@ -178,7 +221,8 @@ final class ObserverEngineImpl implements IObserverEngineAdmin {
 		if (inState != null) {
 			for (Observer observer : model.referencesObserverByState(inState.getPrimaryKey())) {
 				if (inModule != null) {
-					final List<NotificationScope> scopes = model.referencesNotificationScopeByModule(inModule.getPrimaryKey());
+					final List<NotificationScope> scopes = model
+							.referencesNotificationScopeByModule(inModule.getPrimaryKey());
 					for (NotificationScope notificationScope : scopes) {
 						final Module module = notificationScope.getModuleRef();
 						if (inModule.equals(module)) {
@@ -200,5 +244,44 @@ final class ObserverEngineImpl implements IObserverEngineAdmin {
 			observers.add(observer);
 		}
 		return observers;
+	}
+
+	@Override
+	public IState getState(final String inStateName) {
+		if (inStateName == null) {
+			throw new IllegalArgumentException("State name must not be 'null'");
+		}
+		State state;
+		synchronized (stateCache) {
+			state = stateCache.get(inStateName);
+			if (state == null) {
+				final Condition condition = Condition.createString(Operation.EQUALS, Attribute.STATE_STATENAME, inStateName);
+				final List<State> states = model.listState(Arrays.asList(condition));
+				if (states.size() == 0) {
+					throw new IllegalArgumentException(
+							String.format("State with name '%s' is unknown within the observer model", inStateName));
+				}
+				if (states.size() > 1) {
+					throw new IllegalArgumentException(
+							String.format("State with name '%s' exists %s times within the observer model", inStateName,
+									Integer.toString(states.size())));
+				}
+				state = states.get(0);
+				if (state != null) {
+					stateCache.put(state.getStateName(), state);
+				}
+			}
+		}
+		return state;
+	}
+
+	@Override
+	public IState getState(final long inStateID) {
+		final State state = model.findByIDState(inStateID);
+		if (state == null) {
+			throw new IllegalArgumentException(String.format(
+					"State with the internal ID '%s' is unknown within the observer model", Long.toString(inStateID)));
+		}
+		return state;
 	}
 }
