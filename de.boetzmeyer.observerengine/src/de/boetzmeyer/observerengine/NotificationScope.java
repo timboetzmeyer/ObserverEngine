@@ -309,7 +309,7 @@ final class NotificationScope implements INotificationScope {
 
 	public final Observer getObserverRef() {
 		Observer record = null;
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 		if (server != null) {
 			record = server.findByIDObserver(this.getObserver());
 		}
@@ -318,7 +318,7 @@ final class NotificationScope implements INotificationScope {
 
 	public final Module getModuleRef() {
 		Module record = null;
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 		if (server != null) {
 			record = server.findByIDModule(this.getModule());
 		}
@@ -337,7 +337,7 @@ final class NotificationScope implements INotificationScope {
 	}
 
 	public final String toString() {
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 
 		final StringBuilder strBuilder = new StringBuilder();
 
@@ -493,7 +493,7 @@ final class NotificationScope implements INotificationScope {
 	public final boolean save() {
 		boolean bSaved = false;
 
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 
 		if (server != null) {
 			final StringBuffer strBuf = new StringBuffer();
@@ -669,11 +669,11 @@ final class NotificationScope implements INotificationScope {
 		boolean bExported = false;
 		if (dbExport != null) {
 			bExported = dbExport.addNotificationScope(this);
-			final Observer record2 = ServerFactory.create().findByIDObserver(this.m_Observer);
+			final Observer record2 = SourceLocator.create().findByIDObserver(this.m_Observer);
 			if (record2 != null) {
 				record2.export(dbExport);
 			}
-			final Module record3 = ServerFactory.create().findByIDModule(this.m_Module);
+			final Module record3 = SourceLocator.create().findByIDModule(this.m_Module);
 			if (record3 != null) {
 				record3.export(dbExport);
 			}

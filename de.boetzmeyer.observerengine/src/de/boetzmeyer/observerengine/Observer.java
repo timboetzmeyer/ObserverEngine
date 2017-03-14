@@ -377,7 +377,7 @@ final class Observer implements IObserver {
 
 	public final State getStateRef() {
 		State record = null;
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 		if (server != null) {
 			record = server.findByIDState(this.getState());
 		}
@@ -386,7 +386,7 @@ final class Observer implements IObserver {
 
 	public final StateGroup getStateGroupRef() {
 		StateGroup record = null;
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 		if (server != null) {
 			record = server.findByIDStateGroup(this.getStateGroup());
 		}
@@ -405,7 +405,7 @@ final class Observer implements IObserver {
 	}
 
 	public final String toString() {
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 
 		final StringBuilder strBuilder = new StringBuilder();
 
@@ -599,7 +599,7 @@ final class Observer implements IObserver {
 	public final boolean save() {
 		boolean bSaved = false;
 
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 
 		if (server != null) {
 			final StringBuffer strBuf = new StringBuffer();
@@ -842,11 +842,11 @@ final class Observer implements IObserver {
 		boolean bExported = false;
 		if (dbExport != null) {
 			bExported = dbExport.addObserver(this);
-			final State record2 = ServerFactory.create().findByIDState(this.m_State);
+			final State record2 = SourceLocator.create().findByIDState(this.m_State);
 			if (record2 != null) {
 				record2.export(dbExport);
 			}
-			final StateGroup record3 = ServerFactory.create().findByIDStateGroup(this.m_StateGroup);
+			final StateGroup record3 = SourceLocator.create().findByIDStateGroup(this.m_StateGroup);
 			if (record3 != null) {
 				record3.export(dbExport);
 			}
@@ -861,7 +861,7 @@ final class Observer implements IObserver {
 		boolean bExported = false;
 		if (dbExport != null) {
 			bExported = this.export(dbExport);
-			final List<ObserverLink> list0 = ServerFactory.create()
+			final List<ObserverLink> list0 = SourceLocator.create()
 					.referencesObserverLinkBySource(this.getPrimaryKey());
 			for (ObserverLink element : list0) {
 				if (recursive) {
@@ -870,7 +870,7 @@ final class Observer implements IObserver {
 					element.export(dbExport);
 				}
 			}
-			final List<ObserverLink> list1 = ServerFactory.create()
+			final List<ObserverLink> list1 = SourceLocator.create()
 					.referencesObserverLinkByDestination(this.getPrimaryKey());
 			for (ObserverLink element : list1) {
 				if (recursive) {
@@ -879,7 +879,7 @@ final class Observer implements IObserver {
 					element.export(dbExport);
 				}
 			}
-			final List<NotificationScope> list2 = ServerFactory.create()
+			final List<NotificationScope> list2 = SourceLocator.create()
 					.referencesNotificationScopeByObserver(this.getPrimaryKey());
 			for (NotificationScope element : list2) {
 				if (recursive) {

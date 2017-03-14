@@ -2966,7 +2966,7 @@ final class CommunicationModel {
 
 	public final boolean save() {
 		boolean bSaved = false;
-		ISource server = ServerFactory.create();
+		ISource server = SourceLocator.create();
 		if (server != null) {
 			final StringBuffer strBuf = new StringBuffer();
 			strBuf.append("<SET>");

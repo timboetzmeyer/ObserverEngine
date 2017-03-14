@@ -331,7 +331,7 @@ final class State implements Serializable, IRecordable, IState {
 
 	public final StateType getStateTypeRef() {
 		StateType record = null;
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 		if (server != null) {
 			record = server.findByIDStateType(this.getStateType());
 		}
@@ -350,7 +350,7 @@ final class State implements Serializable, IRecordable, IState {
 	}
 
 	public final String toString() {
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 
 		final StringBuilder strBuilder = new StringBuilder();
 
@@ -511,7 +511,7 @@ final class State implements Serializable, IRecordable, IState {
 	public final boolean save() {
 		boolean bSaved = false;
 
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 
 		if (server != null) {
 			final StringBuffer strBuf = new StringBuffer();
@@ -718,7 +718,7 @@ final class State implements Serializable, IRecordable, IState {
 		boolean bExported = false;
 		if (dbExport != null) {
 			bExported = dbExport.addState(this);
-			final StateType record4 = ServerFactory.create().findByIDStateType(this.m_StateType);
+			final StateType record4 = SourceLocator.create().findByIDStateType(this.m_StateType);
 			if (record4 != null) {
 				record4.export(dbExport);
 			}
@@ -733,7 +733,7 @@ final class State implements Serializable, IRecordable, IState {
 		boolean bExported = false;
 		if (dbExport != null) {
 			bExported = this.export(dbExport);
-			final List<Observer> list0 = ServerFactory.create().referencesObserverByState(this.getPrimaryKey());
+			final List<Observer> list0 = SourceLocator.create().referencesObserverByState(this.getPrimaryKey());
 			for (Observer element : list0) {
 				if (recursive) {
 					element.contextExport(dbExport, recursive);
@@ -741,7 +741,7 @@ final class State implements Serializable, IRecordable, IState {
 					element.export(dbExport);
 				}
 			}
-			final List<StateChange> list1 = ServerFactory.create().referencesStateChangeByState(this.getPrimaryKey());
+			final List<StateChange> list1 = SourceLocator.create().referencesStateChangeByState(this.getPrimaryKey());
 			for (StateChange element : list1) {
 				if (recursive) {
 					element.contextExport(dbExport, recursive);

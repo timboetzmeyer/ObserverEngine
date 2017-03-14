@@ -396,7 +396,7 @@ final class Module implements IModule {
 	public final boolean save() {
 		boolean bSaved = false;
 
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 
 		if (server != null) {
 			final StringBuffer strBuf = new StringBuffer();
@@ -578,7 +578,7 @@ final class Module implements IModule {
 		boolean bExported = false;
 		if (dbExport != null) {
 			bExported = this.export(dbExport);
-			final List<NotificationScope> list0 = ServerFactory.create()
+			final List<NotificationScope> list0 = SourceLocator.create()
 					.referencesNotificationScopeByModule(this.getPrimaryKey());
 			for (NotificationScope element : list0) {
 				if (recursive) {

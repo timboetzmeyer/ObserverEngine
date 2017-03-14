@@ -28,6 +28,28 @@ public final class ObserverEngine {
 	 * Creates the only instance of the observer engine in the client
 	 * application.
 	 * 
+	 * @param databaseConnection
+	 *            the connection information to an observer model that exists in
+	 *            a relational database
+	 * @return a reference to the initialized observer engine
+	 */
+	public synchronized static IObserverEngineAdmin init(final DatabaseConnection databaseConnection) {
+		checkDatabaseConnection(databaseConnection);
+		if (observerEngine == null) {
+			final IObserverEngineAdmin newEngine = new ObserverEngineImpl(databaseConnection,
+					DEFAULT_MAX_HISTORY_ENTRIES, DEFAULT_SLEEP_TIME_BETWEEN_TWO_OBSERVATION_CYCLES_IN_MILLISECONDS,
+					DEFAULT_HISTORY_CLEANUP_AFTER_X_OBSERVATION_CYCLES);
+
+			// checkModelContent(databaseConnection, newEngine);
+			observerEngine = newEngine;
+		}
+		return observerEngine;
+	}
+
+	/**
+	 * Creates the only instance of the observer engine in the client
+	 * application.
+	 * 
 	 * @param observerModelDir
 	 *            the local directory where the observer model is stored on hard
 	 *            disk
@@ -60,6 +82,12 @@ public final class ObserverEngine {
 	private static void checkModelDir(final String observerModelDir) {
 		if (observerModelDir == null) {
 			throw new IllegalArgumentException("observerModelDir must not be null");
+		}
+	}
+
+	private static void checkDatabaseConnection(final DatabaseConnection databaseConnection) {
+		if (databaseConnection == null) {
+			throw new IllegalArgumentException("databaseConnection must not be null");
 		}
 	}
 

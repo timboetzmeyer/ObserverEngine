@@ -312,7 +312,7 @@ final class ObserverLink implements IObserverLink {
 
 	public final Observer getSourceRef() {
 		Observer record = null;
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 		if (server != null) {
 			record = server.findByIDObserver(this.getSource());
 		}
@@ -321,7 +321,7 @@ final class ObserverLink implements IObserverLink {
 
 	public final Observer getDestinationRef() {
 		Observer record = null;
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 		if (server != null) {
 			record = server.findByIDObserver(this.getDestination());
 		}
@@ -340,7 +340,7 @@ final class ObserverLink implements IObserverLink {
 	}
 
 	public final String toString() {
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 
 		final StringBuilder strBuilder = new StringBuilder();
 
@@ -545,7 +545,7 @@ final class ObserverLink implements IObserverLink {
 	public final boolean save() {
 		boolean bSaved = false;
 
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 
 		if (server != null) {
 			final StringBuffer strBuf = new StringBuffer();
@@ -720,11 +720,11 @@ final class ObserverLink implements IObserverLink {
 		boolean bExported = false;
 		if (dbExport != null) {
 			bExported = dbExport.addObserverLink(this);
-			final Observer record2 = ServerFactory.create().findByIDObserver(this.m_Source);
+			final Observer record2 = SourceLocator.create().findByIDObserver(this.m_Source);
 			if (record2 != null) {
 				record2.export(dbExport);
 			}
-			final Observer record3 = ServerFactory.create().findByIDObserver(this.m_Destination);
+			final Observer record3 = SourceLocator.create().findByIDObserver(this.m_Destination);
 			if (record3 != null) {
 				record3.export(dbExport);
 			}

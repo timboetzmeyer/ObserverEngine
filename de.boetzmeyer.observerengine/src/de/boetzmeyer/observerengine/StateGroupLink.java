@@ -312,7 +312,7 @@ final class StateGroupLink implements IStateGroupLink {
 
 	public final StateGroup getSourceRef() {
 		StateGroup record = null;
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 		if (server != null) {
 			record = server.findByIDStateGroup(this.getSource());
 		}
@@ -321,7 +321,7 @@ final class StateGroupLink implements IStateGroupLink {
 
 	public final StateGroup getDestinationRef() {
 		StateGroup record = null;
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 		if (server != null) {
 			record = server.findByIDStateGroup(this.getDestination());
 		}
@@ -340,7 +340,7 @@ final class StateGroupLink implements IStateGroupLink {
 	}
 
 	public final String toString() {
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 
 		final StringBuilder strBuilder = new StringBuilder();
 
@@ -545,7 +545,7 @@ final class StateGroupLink implements IStateGroupLink {
 	public final boolean save() {
 		boolean bSaved = false;
 
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 
 		if (server != null) {
 			final StringBuffer strBuf = new StringBuffer();
@@ -720,11 +720,11 @@ final class StateGroupLink implements IStateGroupLink {
 		boolean bExported = false;
 		if (dbExport != null) {
 			bExported = dbExport.addStateGroupLink(this);
-			final StateGroup record2 = ServerFactory.create().findByIDStateGroup(this.m_Source);
+			final StateGroup record2 = SourceLocator.create().findByIDStateGroup(this.m_Source);
 			if (record2 != null) {
 				record2.export(dbExport);
 			}
-			final StateGroup record3 = ServerFactory.create().findByIDStateGroup(this.m_Destination);
+			final StateGroup record3 = SourceLocator.create().findByIDStateGroup(this.m_Destination);
 			if (record3 != null) {
 				record3.export(dbExport);
 			}

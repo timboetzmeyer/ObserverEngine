@@ -18,14 +18,36 @@ final class ObserverEngineImpl implements IObserverEngineAdmin {
 	public ObserverEngineImpl(final String observerModelDir, final int inMaxHistoryEntries,
 			final int inUpdateIntervalInMillis, final int inCleanupCounter) {
 		Settings.setLocaleDatabaseDir(observerModelDir);
-		model = ServerFactory.create();
+		SourceLocator.setFileSource(true);
+		model = SourceLocator.create();
+		observerNotifier = new ObserverNotifier(model, inMaxHistoryEntries, inUpdateIntervalInMillis, inCleanupCounter);
+		loadStateCache();
+	}
+
+	public ObserverEngineImpl(final DatabaseConnection databaseConnection, final int defaultMaxHistoryEntries,
+			final int defaultSleepTimeBetweenTwoObservationCyclesInMilliseconds,
+			final int defaultHistoryCleanupAfterXObservationCycles) {
+		Settings.setServerName(databaseConnection.getServerName());
+		Settings.setPort(databaseConnection.getPort());
+		Settings.setDriverClass(databaseConnection.getDriverClass());
+		Settings.setDriverProtocol(databaseConnection.getDriverProtocol());
+		Settings.setUserName(databaseConnection.getUser());
+		Settings.setPassword(databaseConnection.getPassword());
+		SourceLocator.setFileSource(false);
+		model = SourceLocator.create();
+		observerNotifier = new ObserverNotifier(model, defaultMaxHistoryEntries,
+				defaultSleepTimeBetweenTwoObservationCyclesInMilliseconds,
+				defaultHistoryCleanupAfterXObservationCycles);
+		loadStateCache();
+	}
+
+	private void loadStateCache() {
 		final List<State> states = model.listState();
 		synchronized (stateCache) {
 			for (State state : states) {
 				stateCache.put(state.getStateName(), state);
 			}
 		}
-		observerNotifier = new ObserverNotifier(model, inMaxHistoryEntries, inUpdateIntervalInMillis, inCleanupCounter);
 	}
 
 	/*
@@ -255,7 +277,8 @@ final class ObserverEngineImpl implements IObserverEngineAdmin {
 		synchronized (stateCache) {
 			state = stateCache.get(inStateName);
 			if (state == null) {
-				final Condition condition = Condition.createString(Operation.EQUALS, Attribute.STATE_STATENAME, inStateName);
+				final Condition condition = Condition.createString(Operation.EQUALS, Attribute.STATE_STATENAME,
+						inStateName);
 				final List<State> states = model.listState(Arrays.asList(condition));
 				if (states.size() == 0) {
 					throw new IllegalArgumentException(

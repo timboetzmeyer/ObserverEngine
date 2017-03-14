@@ -397,7 +397,7 @@ final class StateGroup implements Serializable, IRecordable, IStateGroup {
 	public final boolean save() {
 		boolean bSaved = false;
 
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 
 		if (server != null) {
 			final StringBuffer strBuf = new StringBuffer();
@@ -579,7 +579,7 @@ final class StateGroup implements Serializable, IRecordable, IStateGroup {
 		boolean bExported = false;
 		if (dbExport != null) {
 			bExported = this.export(dbExport);
-			final List<Observer> list0 = ServerFactory.create().referencesObserverByStateGroup(this.getPrimaryKey());
+			final List<Observer> list0 = SourceLocator.create().referencesObserverByStateGroup(this.getPrimaryKey());
 			for (Observer element : list0) {
 				if (recursive) {
 					element.contextExport(dbExport, recursive);
@@ -587,7 +587,7 @@ final class StateGroup implements Serializable, IRecordable, IStateGroup {
 					element.export(dbExport);
 				}
 			}
-			final List<StateGroupLink> list1 = ServerFactory.create()
+			final List<StateGroupLink> list1 = SourceLocator.create()
 					.referencesStateGroupLinkBySource(this.getPrimaryKey());
 			for (StateGroupLink element : list1) {
 				if (recursive) {
@@ -596,7 +596,7 @@ final class StateGroup implements Serializable, IRecordable, IStateGroup {
 					element.export(dbExport);
 				}
 			}
-			final List<StateGroupLink> list2 = ServerFactory.create()
+			final List<StateGroupLink> list2 = SourceLocator.create()
 					.referencesStateGroupLinkByDestination(this.getPrimaryKey());
 			for (StateGroupLink element : list2) {
 				if (recursive) {

@@ -397,7 +397,7 @@ final class StateType implements Serializable, IRecordable, IStateType {
 	public final boolean save() {
 		boolean bSaved = false;
 
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 
 		if (server != null) {
 			final StringBuffer strBuf = new StringBuffer();
@@ -579,7 +579,7 @@ final class StateType implements Serializable, IRecordable, IStateType {
 		boolean bExported = false;
 		if (dbExport != null) {
 			bExported = this.export(dbExport);
-			final List<State> list0 = ServerFactory.create().referencesStateByStateType(this.getPrimaryKey());
+			final List<State> list0 = SourceLocator.create().referencesStateByStateType(this.getPrimaryKey());
 			for (State element : list0) {
 				if (recursive) {
 					element.contextExport(dbExport, recursive);

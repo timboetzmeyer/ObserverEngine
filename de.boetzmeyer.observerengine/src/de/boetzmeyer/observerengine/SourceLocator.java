@@ -1,6 +1,6 @@
 package de.boetzmeyer.observerengine;
 
-final class ServerFactory {
+final class SourceLocator {
 	private static boolean fileSource = true;
 
 	public static boolean isFileSource() {

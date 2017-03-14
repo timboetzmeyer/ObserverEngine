@@ -335,7 +335,7 @@ final class StateChange implements Serializable, IRecordable, IStateChange {
 
 	public final State getStateRef() {
 		State record = null;
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 		if (server != null) {
 			record = server.findByIDState(this.getState());
 		}
@@ -502,7 +502,7 @@ final class StateChange implements Serializable, IRecordable, IStateChange {
 	public final boolean save() {
 		boolean bSaved = false;
 
-		final ISource server = ServerFactory.create();
+		final ISource server = SourceLocator.create();
 
 		if (server != null) {
 			final StringBuffer strBuf = new StringBuffer();
@@ -709,7 +709,7 @@ final class StateChange implements Serializable, IRecordable, IStateChange {
 		boolean bExported = false;
 		if (dbExport != null) {
 			bExported = dbExport.addStateChange(this);
-			final State record2 = ServerFactory.create().findByIDState(this.m_State);
+			final State record2 = SourceLocator.create().findByIDState(this.m_State);
 			if (record2 != null) {
 				record2.export(dbExport);
 			}
