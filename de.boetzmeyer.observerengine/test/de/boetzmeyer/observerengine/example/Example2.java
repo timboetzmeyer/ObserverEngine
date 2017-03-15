@@ -1,4 +1,4 @@
-package de.boetzmeyer.observerengine.test;
+package de.boetzmeyer.observerengine.example;
 
 import java.io.File;
 

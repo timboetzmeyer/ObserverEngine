@@ -60,7 +60,7 @@ final class ObserverEngineImpl implements IObserverEngineAdmin {
 	 */
 	@Override
 	public boolean addStateChangeListener(final String inState, final IStateObserver inStateObserver) {
-		if ((inState == null) || (inStateObserver != null)) {
+		if ((inState == null) || (inStateObserver == null)) {
 			return false;
 		}
 		final State registeredState;

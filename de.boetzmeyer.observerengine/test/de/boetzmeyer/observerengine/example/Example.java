@@ -1,24 +1,20 @@
-package de.boetzmeyer.observerengine.test;
-
-import java.io.File;
+package de.boetzmeyer.observerengine.example;
 
 import de.boetzmeyer.observerengine.IObserverEngineAdmin;
 import de.boetzmeyer.observerengine.ObserverEngine;
 
 public class Example {
-	private static final String SPEED_CAR_1 = "car1.speed";
-	private static final String SPEED_CAR_2 = "car2.speed";
-	private static final String SPEED_CAR_3 = "car3.speed";
-	private static final String SPEED_CAR_4 = "car4.speed";
+	private static final String MODEL_DIR = "/Users/timbotzmeyer/Documents/CommunicationModel/";
+	
+	private static final String SPEED_CAR_1 = "S-543";
+	private static final String SPEED_CAR_2 = "S-875";
+	private static final String SPEED_CAR_3 = "S-12455";
+	private static final String SPEED_CAR_4 = "S-0";
 	
 	public static void main(String[] args) {
 		
-		// defines the directory for the observer model file 'CommunicationModel.zip', that has to be located in this directory
-		final String userDir = System.getProperty("user.home");
-		final String modelDir = String.format("%s%s%s", userDir, Character.toString(File.separatorChar), "exampleObserverEngine");
-		
 		// initialize the engine
-		final IObserverEngineAdmin observerEngine = ObserverEngine.init(modelDir);
+		final IObserverEngineAdmin observerEngine = ObserverEngine.init(MODEL_DIR);
 		
 		// start the engine
 		observerEngine.start();
